@@ -35,6 +35,8 @@
 
 using namespace dde::network;
 
+#define CONNECTED  2
+
 Connectivity NetworkModel::m_Connectivity(Connectivity::Full);
 
 NetworkDevice::DeviceType parseDeviceType(const QString &type)
@@ -422,13 +424,21 @@ void NetworkModel::onActiveConnectionsChanged(const QString &conns)
             continue;
 
         m_activeConns << info;
-
-        for (const auto &item : info.value("Devices").toArray()) {
+        //以下15行代码为盘古专门的bug修改的,目前主线上未发现这个问题,详情可以看commit
+        int connectionState = info.value("State").toInt();
+        for (const auto item : info.value("Devices").toArray()) {
             const QString &devicePath = item.toString();
             if (devicePath.isEmpty()) {
                 continue;
             }
             deviceActiveConnsMap[devicePath] << info;
+
+            NetworkDevice *dev = device(devicePath);
+            if (dev != nullptr) {
+                if (dev->status() != NetworkDevice::DeviceStatus::Activated && connectionState == CONNECTED)
+                    qDebug() << devicePath << "The active connection status does not match the device connection status. It has been changed";
+                    dev->setDeviceStatus(NetworkDevice::DeviceStatus::Activated);
+            }
         }
     }
 
