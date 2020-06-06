@@ -32,10 +32,17 @@ using namespace dde::network;
 #include <QJsonArray>
 #include <QJsonValue>
 #include <QJsonDocument>
+#include <QTimer>
+
+#define DELAYTIME (10 * 1000) // 一分钟
 
 WirelessDevice::WirelessDevice(const QJsonObject &info, QObject *parent)
     : NetworkDevice(NetworkDevice::Wireless, info, parent)
+    , m_delayUpdate(new QTimer(this))
 {
+    m_delayUpdate->setInterval(DELAYTIME);
+    connect(m_delayUpdate, &QTimer::timeout, this, &WirelessDevice::updateWirlessAp);
+    m_delayUpdate->start();
 }
 
 bool WirelessDevice::supportHotspot() const
@@ -112,6 +119,20 @@ const QJsonArray WirelessDevice::apList() const
     return apArray;
 }
 
+void WirelessDevice::updateWirlessAp()
+{
+    for (QJsonObject ap : m_latestApAddedInfo)
+        Q_EMIT apAdded(ap);
+    for (QJsonObject ap : m_latestApChangeInfo)
+        Q_EMIT apInfoChanged(ap);
+    for (QJsonObject ap : m_latestApRemoveInfo)
+        Q_EMIT apRemoved(ap);
+
+    m_latestApAddedInfo.clear();
+    m_latestApChangeInfo.clear();
+    m_latestApRemoveInfo.clear();
+}
+
 void WirelessDevice::setAPList(const QString &apList)
 {
     QMap<QString, QJsonObject> apsMapOld = m_apsMap;
@@ -162,9 +183,9 @@ void WirelessDevice::updateAPInfo(const QString &apInfo)
         }
 
         if (m_apsMap.contains(path)) {
-            Q_EMIT apInfoChanged(ap);
+            m_latestApChangeInfo.insert(path, ap);
         } else {
-            Q_EMIT apAdded(ap);
+            m_latestApAddedInfo.insert(path, ap);
         }
         // QMap will replace existing key-value
         m_apsMap.insert(path, ap);
@@ -179,7 +200,15 @@ void WirelessDevice::deleteAP(const QString &apInfo)
     if (!path.isEmpty()) {
         if (m_apsMap.contains(path)) {
             m_apsMap.remove(path);
-            Q_EMIT apRemoved(ap);
+
+            bool isAddedListContain = m_latestApAddedInfo.contains(path);
+            bool isRemoveListContain = m_latestApChangeInfo.contains(path);
+            if (isAddedListContain)
+                m_latestApAddedInfo.remove(path);
+            if (isRemoveListContain)
+                m_latestApChangeInfo.remove(path);
+            if (!isAddedListContain && !isRemoveListContain)
+                m_latestApRemoveInfo.insert(path, ap);
         }
     }
 }

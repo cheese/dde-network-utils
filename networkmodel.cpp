@@ -435,9 +435,10 @@ void NetworkModel::onActiveConnectionsChanged(const QString &conns)
 
             NetworkDevice *dev = device(devicePath);
             if (dev != nullptr) {
-                if (dev->status() != NetworkDevice::DeviceStatus::Activated && connectionState == CONNECTED)
+                if (dev->status() != NetworkDevice::DeviceStatus::Activated && connectionState == CONNECTED) {
                     qDebug() << devicePath << "The active connection status does not match the device connection status. It has been changed";
                     dev->setDeviceStatus(NetworkDevice::DeviceStatus::Activated);
+                }
             }
         }
     }

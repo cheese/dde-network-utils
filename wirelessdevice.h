@@ -31,6 +31,8 @@
 #include <QMap>
 #include <QJsonArray>
 
+class QTimer;
+
 namespace dde {
 
 namespace network {
@@ -63,6 +65,7 @@ public:
     inline const QString activeApSsid() const { return m_activeApInfo.value("Ssid").toString(); }
     inline const QString activeApPath() const { return m_activeApInfo.value("Path").toString(); }
     inline int activeApStrength() const { return m_activeApInfo.value("Strength").toInt(); }
+    void updateWirlessAp();
 
 Q_SIGNALS:
     void apAdded(const QJsonObject &apInfo) const;
@@ -101,6 +104,10 @@ private:
     QMap<QString, QJsonObject> m_apsMap;
     QList<QJsonObject> m_connections;
     QList<QJsonObject> m_hotspotConnections;
+    QMap<QString, QJsonObject> m_latestApAddedInfo;
+    QMap<QString, QJsonObject> m_latestApRemoveInfo;
+    QMap<QString, QJsonObject> m_latestApChangeInfo;
+    QTimer *m_delayUpdate;
 };
 
 }
