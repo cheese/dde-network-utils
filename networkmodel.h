@@ -149,7 +149,7 @@ private Q_SLOTS:
     void onNeedSecretsFinished(const QString &info0, const QString &info1);
     void onConnectivityChanged(int connectivity);
     void onConnectivitySecondaryCheckFinished(bool connectivity);
-
+    void WirelessAccessPointsChanged(const QString &WirelessList);
 private:
     bool containsDevice(const QString &devPath) const;
     NetworkDevice *device(const QString &devPath) const;

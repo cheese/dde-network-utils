@@ -34,15 +34,11 @@ using namespace dde::network;
 #include <QJsonDocument>
 #include <QTimer>
 
-#define DELAYTIME (10 * 1000) // 一分钟
 
 WirelessDevice::WirelessDevice(const QJsonObject &info, QObject *parent)
     : NetworkDevice(NetworkDevice::Wireless, info, parent)
-    , m_delayUpdate(new QTimer(this))
+    , m_networkInter("com.deepin.daemon.Network", "/com/deepin/daemon/Network", QDBusConnection::sessionBus(), this)
 {
-    m_delayUpdate->setInterval(DELAYTIME);
-    connect(m_delayUpdate, &QTimer::timeout, this, &WirelessDevice::updateWirlessAp);
-    m_delayUpdate->start();
 }
 
 bool WirelessDevice::supportHotspot() const
@@ -121,16 +117,13 @@ const QJsonArray WirelessDevice::apList() const
 
 void WirelessDevice::updateWirlessAp()
 {
-    for (QJsonObject ap : m_latestApAddedInfo)
-        Q_EMIT apAdded(ap);
-    for (QJsonObject ap : m_latestApChangeInfo)
-        Q_EMIT apInfoChanged(ap);
-    for (QJsonObject ap : m_latestApRemoveInfo)
-        Q_EMIT apRemoved(ap);
-
-    m_latestApAddedInfo.clear();
-    m_latestApChangeInfo.clear();
-    m_latestApRemoveInfo.clear();
+    QString WirlessData = m_networkInter.RequestWirelessScan();
+    QJsonObject WirelessJson = QJsonDocument::fromJson(WirlessData.toUtf8()).object();
+    for(QString Device : WirelessJson.keys()) {
+        if(Device == this->path()) {
+            WirelessUpdate(WirelessJson.value(Device));
+        }
+    }
 }
 
 void WirelessDevice::setAPList(const QString &apList)
@@ -183,9 +176,9 @@ void WirelessDevice::updateAPInfo(const QString &apInfo)
         }
 
         if (m_apsMap.contains(path)) {
-            m_latestApChangeInfo.insert(path, ap);
+            Q_EMIT apInfoChanged(ap);
         } else {
-            m_latestApAddedInfo.insert(path, ap);
+            Q_EMIT apAdded(ap);
         }
         // QMap will replace existing key-value
         m_apsMap.insert(path, ap);
@@ -200,15 +193,7 @@ void WirelessDevice::deleteAP(const QString &apInfo)
     if (!path.isEmpty()) {
         if (m_apsMap.contains(path)) {
             m_apsMap.remove(path);
-
-            bool isAddedListContain = m_latestApAddedInfo.contains(path);
-            bool isRemoveListContain = m_latestApChangeInfo.contains(path);
-            if (isAddedListContain)
-                m_latestApAddedInfo.remove(path);
-            if (isRemoveListContain)
-                m_latestApChangeInfo.remove(path);
-            if (!isAddedListContain && !isRemoveListContain)
-                m_latestApRemoveInfo.insert(path, ap);
+            Q_EMIT apRemoved(ap);
         }
     }
 }
@@ -294,4 +279,36 @@ QString WirelessDevice::activeApSsidByActiveConnUuid(const QString &activeConnUu
     }
 
     return activeApSsid;
+}
+
+void WirelessDevice::WirelessUpdate(const QJsonValue &WirelessList)
+{
+    QMap<QString,QString> SsidDatas;
+    QStringList Wirelesschanges;
+    QJsonArray WirelessDatas = WirelessList.toArray();
+    //QJsonArray datas = WirelessData.value(Device).toArray();
+    for (QJsonValue data:WirelessDatas) {
+        if (data.isNull())
+            break;
+        QJsonObject JsonData = data.toObject();
+        QString Ssid = JsonData.value("Ssid").toString();
+        if (JsonData.contains("Ssid")) {
+            QString Ssid = JsonData.value("Ssid").toString();
+            SsidDatas.insert(Ssid,QString(QJsonDocument(JsonData).toJson()));
+        }
+    }
+    QString datachange;
+    //由于改变和增加,在wirelessdevice都是调用的updateAPInfo,所以可以全部包含的直接发送改变信号
+    for(QString Ssidkey: SsidDatas.keys()) {
+        m_ssidDatas.insert(Ssidkey,SsidDatas.value(Ssidkey));
+        datachange += SsidDatas.value(Ssidkey);
+    }
+    this->updateAPInfo(datachange);
+
+    for(QString Ssidkey: m_ssidDatas.keys()) {
+        if(!SsidDatas.contains(Ssidkey)) {
+            this->deleteAP(m_ssidDatas.value(Ssidkey));
+            m_ssidDatas.remove(Ssidkey);
+        }
+    }
 }

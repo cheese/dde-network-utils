@@ -653,3 +653,15 @@ void NetworkModel::onAppProxyExistChanged(bool appProxyExist)
 
     Q_EMIT appProxyExistChanged(appProxyExist);
 }
+
+void NetworkModel::WirelessAccessPointsChanged(const QString &WirelessList)
+{
+    QJsonObject WirelessData = QJsonDocument::fromJson(WirelessList.toUtf8()).object();
+    for(QString Device : WirelessData.keys()) {
+        for (auto const dev : m_devices) {
+            if (dev->type() != NetworkDevice::Wireless || dev->path() != Device)
+                continue;
+            return static_cast<WirelessDevice *>(dev)->WirelessUpdate(WirelessData.value(Device));
+        }
+    }
+}
