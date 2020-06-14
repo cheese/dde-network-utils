@@ -109,21 +109,15 @@ const QString WirelessDevice::activeWirelessConnSettingPath() const
 const QJsonArray WirelessDevice::apList() const
 {
     QJsonArray apArray;
-    for (auto ap : m_apsMap.values()) {
-        apArray.append(ap);
+    for (auto ap : m_ssidDatas.values()) {
+        apArray.append(QJsonDocument::fromJson(ap.toUtf8()).object());
     }
     return apArray;
 }
 
 void WirelessDevice::updateWirlessAp()
 {
-    QString WirlessData = m_networkInter.RequestWirelessScan();
-    QJsonObject WirelessJson = QJsonDocument::fromJson(WirlessData.toUtf8()).object();
-    for(QString Device : WirelessJson.keys()) {
-        if(Device == this->path()) {
-            WirelessUpdate(WirelessJson.value(Device));
-        }
-    }
+    m_networkInter.RequestWirelessScan();
 }
 
 void WirelessDevice::setAPList(const QString &apList)
@@ -283,32 +277,38 @@ QString WirelessDevice::activeApSsidByActiveConnUuid(const QString &activeConnUu
 
 void WirelessDevice::WirelessUpdate(const QJsonValue &WirelessList)
 {
-    QMap<QString,QString> SsidDatas;
+    QMap<QString,QJsonObject> SsidDatas;
     QStringList Wirelesschanges;
     QJsonArray WirelessDatas = WirelessList.toArray();
     //QJsonArray datas = WirelessData.value(Device).toArray();
     for (QJsonValue data:WirelessDatas) {
         if (data.isNull())
-            break;
+            continue;
         QJsonObject JsonData = data.toObject();
-        QString Ssid = JsonData.value("Ssid").toString();
-        if (JsonData.contains("Ssid")) {
-            QString Ssid = JsonData.value("Ssid").toString();
-            SsidDatas.insert(Ssid,QString(QJsonDocument(JsonData).toJson()));
+        if (JsonData.contains("Path") && JsonData.contains("Strength")) {
+            QString Path = JsonData.value("Path").toString();
+            if (!SsidDatas.contains(Path)) {
+                SsidDatas.insert(Path,JsonData);
+                continue;
+            }
+            int Strength = SsidDatas[Path].value("Strength").toInt();
+            if (JsonData.value("Strength").toInt() > Strength)
+                SsidDatas.insert(Path,JsonData);
         }
     }
-    QString datachange;
-    //由于改变和增加,在wirelessdevice都是调用的updateAPInfo,所以可以全部包含的直接发送改变信号
-    for(QString Ssidkey: SsidDatas.keys()) {
-        m_ssidDatas.insert(Ssidkey,SsidDatas.value(Ssidkey));
-        datachange += SsidDatas.value(Ssidkey);
-    }
-    this->updateAPInfo(datachange);
 
+    //由于改变和增加,都是调用updateAPInfo，所以可以直接将改变了的全部直接发送出去
+    for(QString Ssidkey: SsidDatas.keys()) {
+        QString ssidData = QString(QJsonDocument(SsidDatas.value(Ssidkey)).toJson());
+        //这一步会根据当前有的做修改，没有的会加上
+        m_ssidDatas.insert(Ssidkey,ssidData);
+        this->updateAPInfo(ssidData);
+    }
     for(QString Ssidkey: m_ssidDatas.keys()) {
         if(!SsidDatas.contains(Ssidkey)) {
             this->deleteAP(m_ssidDatas.value(Ssidkey));
             m_ssidDatas.remove(Ssidkey);
         }
     }
+    SsidDatas.clear();
 }
