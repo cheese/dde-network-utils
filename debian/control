@@ -8,6 +8,7 @@ Build-Depends:
  pkg-config,
  qt5-qmake,
  qt5-default,
+ libgsettings-qt-dev,
  qttools5-dev-tools
 Standards-Version: 3.9.8
 Homepage: https://github.com/linuxdeepin/dde-network-utils

@@ -23,6 +23,9 @@
 #define CONNECTIVITYCHECKER_H
 
 #include <QObject>
+#include <QStringList>
+
+class QGSettings;
 
 namespace dde {
 
@@ -41,6 +44,11 @@ Q_SIGNALS:
 
 public Q_SLOTS:
     void startCheck();
+
+private:
+    QGSettings* m_settings;
+    QStringList m_checkUrls;
+
 };
 
 }   // namespace network
