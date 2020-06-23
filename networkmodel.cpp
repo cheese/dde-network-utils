@@ -654,13 +654,15 @@ void NetworkModel::onAppProxyExistChanged(bool appProxyExist)
     Q_EMIT appProxyExistChanged(appProxyExist);
 }
 
+//这个地方是后端数据的入口,WirelessAccessPoints属性修改会被这里调用
 void NetworkModel::WirelessAccessPointsChanged(const QString &WirelessList)
 {
+    //当数据非json的时候,则这个里面的项为0,则下面的for不会被执行
     QJsonObject WirelessData = QJsonDocument::fromJson(WirelessList.toUtf8()).object();
     for(QString Device : WirelessData.keys()) {
         for (auto const dev : m_devices) {
-            if (dev->type() != NetworkDevice::Wireless || dev->path() != Device)
-                continue;
+            //当类型不为无线网,path不为当前需要的device则进入下一个循环
+            if (dev->type() != NetworkDevice::Wireless || dev->path() != Device) continue;
             return static_cast<WirelessDevice *>(dev)->WirelessUpdate(WirelessData.value(Device));
         }
     }
