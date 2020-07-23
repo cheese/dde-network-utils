@@ -129,9 +129,9 @@ const QString NetworkDevice::statusStringDetail() const
     case Unmanaged:
     case Unavailable: {
         switch (m_type) {
-        case DeviceType::None: return QString();
+        case DeviceType::None: return QString("");
         case DeviceType::Wired: return tr("Network cable unplugged");
-        default:;
+        case DeviceType::Wireless: return tr("Device disabled");
         }
     }
     case Disconnected:  return tr("Not connected");
