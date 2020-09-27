@@ -73,6 +73,8 @@ public:
     bool vpnEnabled() const { return m_vpnEnabled; }
     bool appProxyExist() const { return m_appProxyExist; }
 
+    void WirelessListClear();
+
     static Connectivity connectivity() { return m_Connectivity; }
 
     const ProxyConfig proxy(const QString &type) const { return m_proxies[type]; }
@@ -117,7 +119,6 @@ Q_SIGNALS:
     void needSecrets(const QString &info);
     void needSecretsFinished(const QString &info0, const QString &info1);
     void connectivityChanged(const Connectivity connectivity) const;
-
     // Private Signals
     // Need ensure the checker thread is running
     // before emit this signal

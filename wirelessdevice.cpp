@@ -159,6 +159,12 @@ void WirelessDevice::setAPList(const QString &apList)
     setActiveApBySsid(activeApSsidByActiveConnUuid(activeWirelessConnUuid()));
 }
 
+void WirelessDevice::WirelessListClear()
+{
+    m_ssidDatas.clear();
+    m_apsMap.clear();
+}
+
 void WirelessDevice::updateAPInfo(const QString &apInfo)
 {
     const auto &ap = QJsonDocument::fromJson(apInfo.toUtf8()).object();

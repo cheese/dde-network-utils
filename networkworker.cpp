@@ -59,7 +59,6 @@ NetworkWorker::NetworkWorker(NetworkModel *model, QObject *parent, bool sync)
     m_chainsInter->setSync(false);
 
     active(sync);
-    m_networkModel->WirelessAccessPointsChanged(m_networkInter.wirelessAccessPoints());
 }
 
 void NetworkWorker::active(bool bSync)
@@ -176,6 +175,8 @@ void NetworkWorker::queryProxy(const QString &type)
 
 void NetworkWorker::requestWirelessScan()
 {
+    //让程序一打开可以正常获取到wifi列表，防止出现列表为空的情况
+    m_networkModel->WirelessAccessPointsChanged(m_networkInter.wirelessAccessPoints());
     m_networkInter.RequestWirelessScan();
 }
 

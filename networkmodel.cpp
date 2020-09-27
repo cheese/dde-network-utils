@@ -51,6 +51,15 @@ NetworkDevice::DeviceType parseDeviceType(const QString &type)
     return NetworkDevice::None;
 }
 
+void NetworkModel::WirelessListClear()
+{
+    for (auto dev:m_devices)
+    {
+         if (dev->type() == NetworkDevice::Wireless)
+              dynamic_cast<WirelessDevice *>(dev) ->WirelessListClear();
+    }
+}
+
 NetworkModel::NetworkModel(QObject *parent)
     : QObject(parent)
     , m_lastSecretDevice(nullptr)

@@ -45,12 +45,11 @@ class WirelessDevice : public NetworkDevice
 
 public:
     explicit WirelessDevice(const QJsonObject &info, QObject *parent = nullptr);
-
     bool supportHotspot() const;
     inline bool hotspotEnabled() const { return !m_activeHotspotInfo.isEmpty(); }
     inline QJsonObject activeHotspotInfo() const { return m_activeHotspotInfo; }
     const QString activeHotspotUuid() const;
-
+    void WirelessListClear();
     const QList<QJsonObject> activeConnections() const;
     const QList<QJsonObject> activeConnectionsInfo() const;
     const QList<QJsonObject> activeVpnConnectionsInfo() const;
