@@ -450,7 +450,6 @@ void NetworkModel::onActiveConnectionsChanged(const QString &conns)
             }
         }
     }
-
     // 将 active 连接分配给具体的设备
     for (auto it(deviceActiveConnsMap.constBegin()); it != deviceActiveConnsMap.constEnd(); ++it) {
         NetworkDevice *dev = device(it.key());
@@ -472,8 +471,6 @@ void NetworkModel::onActiveConnectionsChanged(const QString &conns)
                 break;
         }
     }
-
-    Q_EMIT activeConnectionsChanged(m_activeConns);
 }
 
 void NetworkModel::onConnectionSessionCreated(const QString &device, const QString &sessionPath)
