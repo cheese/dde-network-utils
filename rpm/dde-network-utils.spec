@@ -5,7 +5,7 @@ Name:           deepin-network-utils
 %else
 Name:           %{repo}
 %endif
-Version:        5.3.0.5
+Version:        5.3.0.8
 Release:        1%{?dist}
 Summary:        Deepin desktop-environment - network utils
 License:        GPLv3
@@ -21,6 +21,9 @@ BuildRequires:  pkgconfig(dframeworkdbus)
 BuildRequires:  pkgconfig(Qt5Core)
 BuildRequires:  qt5-linguist
 BuildRequires:  pkgconfig(gsettings-qt)
+BuildRequires:  make
+BuildRequires:  gio-qt-devel
+BuildRequires:  gtest-devel
 
 %description
 Deepin desktop-environment - network utils.
@@ -33,8 +36,8 @@ Requires:       %{name}%{?_isa} = %{version}-%{release}
 Header files and libraries for %{name}.
 
 %prep
-%autosetup -n %{repo}-%{version}
-sed -i 's|/lib$|/%{_lib}|' dde-network-utils.pro
+%autosetup -p1 -n %{repo}-%{version}
+sed -i 's|/lib$|/%{_lib}|' dde-network-utils/dde-network-utils.pro
 
 %build
 # help find (and prefer) qt5 utilities, e.g. qmake, lrelease
